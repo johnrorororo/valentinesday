@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VALENTINE'S DAY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #5db3e4;
+            touch-action: manipulation;
+        }
+
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 100;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #game-canvas { display: block; image-rendering: pixelated; }
+
+        .ui-container {
+            position: absolute;
+            top: 22%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; z-index: 50;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(1.2rem, 5vw, 2.8rem);
+            margin-bottom: 20px;
+            color: #FF69B4;
+            animation: floatHeader 3s ease-in-out infinite;
+            text-shadow: 4px 4px #000, 0 0 20px rgba(255, 105, 180, 0.5);
+        }
+
+        .sub-message {
+            font-family: 'VT323', monospace;
+            font-size: clamp(1.2rem, 3vw, 2.2rem);
+            line-height: 1.4;
+            color: white;
+            animation: floatSub 3s ease-in-out infinite 0.5s;
+            text-shadow: 2px 2px #000;
+        }
+
+        @keyframes floatHeader { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.02); } }
+        @keyframes floatSub { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    </style>
+</head>
+<body>
+
+    <div class="ui-container">
+        <h1>HAPPY VALENTINE'S</h1>
+        <p class="sub-message">
+            Continue to be joyful and positive in life.<br>
+            Whatever happens, I will always be at your side. I LOVE YOU!
+        </p>
+    </div>
+    
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let bgImage = new Image(); bgImage.src = 'gb.jpg'; 
+        let usImage = new Image(); usImage.src = 'US.jpg';
+
+        let bgX = 0;
+        let animFrame = 0;
+        const clouds = [], flowers = [], petals = [], fireflies = [];
+        let pixelScale = 7;
+        let bgDrawWidth, bgDrawHeight;
+
+        let blueBubble = { text: "", timer: 0 };
+        let redBubble = { text: "", timer: 0 };
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            pixelScale = canvas.width < 768 ? 6 : 9; 
+            
+            if (bgImage.complete) {
+                let imgRatio = bgImage.width / bgImage.height;
+                let canvasRatio = canvas.width / canvas.height;
+                if (canvasRatio > imgRatio) {
+                    bgDrawWidth = canvas.width;
+                    bgDrawHeight = canvas.width / imgRatio;
+                } else {
+                    bgDrawHeight = canvas.height;
+                    bgDrawWidth = canvas.height * imgRatio;
+                }
+            }
+        }
+        window.addEventListener('resize', resize);
+        bgImage.onload = resize;
+        resize();
+
+        function handleInteraction(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            const b1X = canvas.width * 0.40;
+            const b2X = canvas.width * 0.50;
+            const roadY = canvas.height * 0.85;
+            const charWidth = pixelScale * 8; 
+            const charHeight = pixelScale * 15;
+
+            if (x > b1X - 10 && x < b1X + charWidth && y > roadY - charHeight && y < roadY + 20) {
+                blueBubble = { text: "I LOVE YOU", timer: 120 };
+                setTimeout(() => { redBubble = { text: "I LOVE YOU TOO", timer: 120 }; }, 500);
+            }
+            if (x > b2X - 10 && x < b2X + charWidth && y > roadY - charHeight && y < roadY + 20) {
+                redBubble = { text: "I LOVE YOU", timer: 120 };
+                setTimeout(() => { blueBubble = { text: "I LOVE YOU TOO", timer: 120 }; }, 500);
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleInteraction);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction(e); }, {passive: false});
+
+        for(let i=0; i<15; i++) {
+            fireflies.push({
+                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                s: Math.random() * 2 + 1, spX: Math.random() * 0.6 - 0.3, spY: Math.random() * 0.6 - 0.3,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        class Petal {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width + 100; this.y = -20;
+                this.speedY = Math.random() * 1 + 1; this.speedX = Math.random() * -1 - 1;
+                this.rot = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.y += this.speedY; this.x += this.speedX; this.rot += 0.02;
+                if (this.y > canvas.height || this.x < -20) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = "#ffc0cb"; ctx.save();
+                ctx.translate(this.x, this.y); ctx.rotate(this.rot);
+                ctx.fillRect(0, 0, 5, 5); ctx.restore();
+            }
+        }
+
+        class Billboard {
+            constructor() { this.width = 340; this.height = 210; this.reset(); }
+            reset() { this.x = canvas.width + 800; }
+            update() { this.x -= 1.8; if (this.x < -this.width - 200) this.reset(); }
+            draw() {
+                const s = pixelScale; const roadY = canvas.height * 0.85;
+                const bY = roadY - this.height - (s * 8);
+                ctx.fillStyle = "#3d261c";
+                ctx.fillRect(this.x + 60, bY + this.height, s * 3, roadY - (bY + this.height));
+                ctx.fillRect(this.x + this.width - 60, bY + this.height, s * 3, roadY - (bY + this.height));
+                ctx.fillStyle = "#5d4037"; ctx.fillRect(this.x - s, bY - s, this.width + (s*2), this.height + (s*2));
+                ctx.fillStyle = "white"; ctx.fillRect(this.x, bY, this.width, this.height);
+                if (usImage.complete) {
+                    ctx.drawImage(usImage, this.x + 10, bY + 10, this.width - 20, this.height - 20);
+                }
+            }
+        }
+
+        function drawBubble(x, y, bubble, side) {
+            if (bubble.timer <= 0) return;
+            const s = pixelScale;
+            ctx.font = `${s * 2.2}px 'VT323'`;
+            const textWidth = ctx.measureText(bubble.text).width;
+            const padding = s * 1.5;
+            let bubbleX = (side === "left") ? x - textWidth - (s * 6) : x + (s * 6);
+            let bubbleY = y - (s * 4);
+            ctx.fillStyle = "white";
+            ctx.fillRect(bubbleX - padding, bubbleY - (s * 3), textWidth + (padding * 2), s * 5);
+            ctx.fillStyle = "black";
+            ctx.textAlign = "left";
+            ctx.fillText(bubble.text, bubbleX, bubbleY + (s * 0.5));
+            bubble.timer--;
+        }
+
+        function drawDetailedBoy(x, y, colors, offset) {
+            const s = pixelScale;
+            const walkSpeed = 0.15;
+            const bounce = Math.sin(animFrame * walkSpeed + offset) * (s * 0.5);
+            const walk = Math.sin(animFrame * walkSpeed + offset) * (s * 0.8);
+            ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.fillRect(x, y + s*8, s*6, s*1); 
+            ctx.fillStyle = "#222"; ctx.fillRect(x + s*1, y + s*8 + (walk > 0 ? walk : 0), s*2, s*1.2);
+            ctx.fillRect(x + s*4, y + s*8 + (walk < 0 ? -walk : 0), s*2, s*1.2);
+            ctx.fillStyle = colors.pants; ctx.fillRect(x + s*1, y + s*5, s*2, s*3.5 + (walk > 0 ? walk : 0));
+            ctx.fillRect(x + s*4, y + s*5, s*2, s*3.5 + (walk < 0 ? -walk : 0));
+            ctx.fillStyle = colors.shirt; ctx.fillRect(x + s*0.5, y - s*0.5 + bounce, s*6, s*6);
+            ctx.fillStyle = "#ffdbac"; ctx.fillRect(x - s*1, y + s*1 + bounce - (walk*0.8), s*1.5, s*4);
+            ctx.fillRect(x + s*6.5, y + s*1 + bounce + (walk*0.8), s*1.5, s*4);
+            ctx.fillRect(x + s*1, y - s*6 + bounce, s*5, s*5.5);
+            if (animFrame % 120 > 5) { 
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x + s*2, y - s*4 + bounce, s*0.8, s*1.2);
+                ctx.fillRect(x + s*4.2, y - s*4 + bounce, s*0.8, s*1.2);
+            }
+            ctx.fillStyle = colors.hair; ctx.fillRect(x + s*0.5, y - s*7 + bounce, s*6, s*2.5); 
+            ctx.fillRect(x + s*0.5, y - s*5 + bounce, s*1.2, s*3); 
+        }
+
+        const myBillboard = new Billboard();
+        for(let i=0; i<8; i++) clouds.push({x: Math.random()*canvas.width, y: Math.random()*200, s: Math.random()*5+2, sp: Math.random()*0.5+0.1});
+        for(let i=0; i<20; i++) flowers.push({x: Math.random()*canvas.width, y: 0.88, c: ['#FF69B4', '#FFD700', '#FFFFFF'][Math.floor(Math.random()*3)]});
+        for(let i=15; i>0; i--) petals.push(new Petal());
+
+        function animate() {
+            animFrame++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            bgX -= 0.8; if (bgX <= -bgDrawWidth) bgX = 0;
+            if (bgImage.complete) {
+                let yPos = (canvas.height - bgDrawHeight) / 2;
+                ctx.drawImage(bgImage, bgX, yPos, bgDrawWidth, bgDrawHeight);
+                ctx.drawImage(bgImage, bgX + bgDrawWidth, yPos, bgDrawWidth, bgDrawHeight);
+            }
+            clouds.forEach(c => {
+                c.x -= c.sp; if(c.x < -200) c.x = canvas.width + 200;
+                ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.fillRect(c.x, c.y, c.s*15, c.s*4);
+            });
+            myBillboard.update(); myBillboard.draw();
+            flowers.forEach(f => {
+                f.x -= 1.5; if(f.x < -50) f.x = canvas.width + 50;
+                ctx.fillStyle = f.c; ctx.fillRect(f.x, canvas.height * f.y, 5, 5);
+            });
+            fireflies.forEach(f => {
+                f.x += f.spX; f.y += f.spY;
+                if(f.x < 0) f.x = canvas.width; if(f.x > canvas.width) f.x = 0;
+                if(f.y < 0) f.y = canvas.height; if(f.y > canvas.height) f.y = 0;
+                let alpha = Math.abs(Math.sin(animFrame * 0.05 + f.phase));
+                ctx.fillStyle = `rgba(255, 255, 180, ${alpha})`; ctx.fillRect(f.x, f.y, f.s, f.s);
+            });
+            petals.forEach(p => { p.update(); p.draw(); });
+
+            const roadY = canvas.height * 0.85;
+            const s = pixelScale;
+            const b1X = canvas.width * 0.40;
+            const b2X = canvas.width * 0.50;
+
+            drawDetailedBoy(b1X, roadY, {shirt: "#3498db", pants: "#2c3e50", hair: "#4b2c20"}, 0);
+            drawDetailedBoy(b2X, roadY, {shirt: "#e74c3c", pants: "#34495e", hair: "#1a1a1a"}, Math.PI);
+            
+            drawBubble(b1X, roadY, blueBubble, "left");
+            drawBubble(b2X + s*6, roadY, redBubble, "right");
+
+            ctx.fillStyle = "white"; ctx.font = `${s * 3}px 'VT323'`; ctx.textAlign = "center";
+            ctx.shadowColor = "black"; ctx.shadowBlur = 5;
+            ctx.fillText("MICHAEL", b1X + (s*3), roadY - (s*11));
+            ctx.fillText("JOHNRO", b2X + (s*3), roadY - (s*11));
+            ctx.shadowBlur = 0;
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
