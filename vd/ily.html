@@ -55,11 +55,37 @@
             text-shadow: 2px 2px #000;
         }
 
+        /* BLUE MANDATORY SIGN - Adjusted Position */
+        #hint-sign {
+            position: absolute;
+            bottom: 32%; /* Moved higher up so it doesn't cover names */
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'VT323', monospace;
+            font-size: clamp(1.1rem, 4vw, 1.8rem);
+            color: #fff;
+            background: rgba(0, 80, 150, 0.85); 
+            padding: 8px 20px;
+            border: 3px solid #00d4ff; 
+            border-radius: 4px;
+            z-index: 60;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4), 4px 4px 0 #000;
+            animation: signSwing 3s ease-in-out infinite;
+        }
+
+        @keyframes signSwing {
+            0%, 100% { transform: translateX(-50%) rotate(-2deg); }
+            50% { transform: translateX(-50%) rotate(2deg); }
+        }
+
         @keyframes floatHeader { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.02); } }
         @keyframes floatSub { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
     </style>
 </head>
 <body>
+
+    <div id="hint-sign">TAP THE CHARACTERS! ⚓︎</div>
 
     <div class="ui-container">
         <h1>HAPPY VALENTINE'S</h1>
@@ -108,23 +134,32 @@
         bgImage.onload = resize;
         resize();
 
+        function getCharacterPositions() {
+            const centerX = canvas.width / 2;
+            const gap = canvas.width < 600 ? 55 : 85; 
+            return {
+                b1X: centerX - gap,
+                b2X: centerX + gap - (pixelScale * 6)
+            };
+        }
+
         function handleInteraction(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             const x = clientX - rect.left;
             const y = clientY - rect.top;
-            const b1X = canvas.width * 0.40;
-            const b2X = canvas.width * 0.50;
+            
+            const { b1X, b2X } = getCharacterPositions();
             const roadY = canvas.height * 0.85;
             const charWidth = pixelScale * 8; 
             const charHeight = pixelScale * 15;
 
-            if (x > b1X - 10 && x < b1X + charWidth && y > roadY - charHeight && y < roadY + 20) {
+            if (x > b1X - 35 && x < b1X + charWidth + 35 && y > roadY - charHeight - 35 && y < roadY + 35) {
                 blueBubble = { text: "I LOVE YOU", timer: 120 };
                 setTimeout(() => { redBubble = { text: "I LOVE YOU TOO", timer: 120 }; }, 500);
             }
-            if (x > b2X - 10 && x < b2X + charWidth && y > roadY - charHeight && y < roadY + 20) {
+            if (x > b2X - 35 && x < b2X + charWidth + 35 && y > roadY - charHeight - 35 && y < roadY + 35) {
                 redBubble = { text: "I LOVE YOU", timer: 120 };
                 setTimeout(() => { blueBubble = { text: "I LOVE YOU TOO", timer: 120 }; }, 500);
             }
@@ -184,7 +219,7 @@
             const textWidth = ctx.measureText(bubble.text).width;
             const padding = s * 1.5;
             let bubbleX = (side === "left") ? x - textWidth - (s * 6) : x + (s * 6);
-            let bubbleY = y - (s * 4);
+            let bubbleY = y - (s * 10);
             ctx.fillStyle = "white";
             ctx.fillRect(bubbleX - padding, bubbleY - (s * 3), textWidth + (padding * 2), s * 5);
             ctx.fillStyle = "black";
@@ -250,8 +285,7 @@
 
             const roadY = canvas.height * 0.85;
             const s = pixelScale;
-            const b1X = canvas.width * 0.40;
-            const b2X = canvas.width * 0.50;
+            const { b1X, b2X } = getCharacterPositions();
 
             drawDetailedBoy(b1X, roadY, {shirt: "#3498db", pants: "#2c3e50", hair: "#4b2c20"}, 0);
             drawDetailedBoy(b2X, roadY, {shirt: "#e74c3c", pants: "#34495e", hair: "#1a1a1a"}, Math.PI);
